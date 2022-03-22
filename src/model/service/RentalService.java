@@ -1,20 +1,20 @@
 package model.service;
 
 import model.entities.CarRental;
+import model.entities.Invoice;
 
 public class RentalService {
 
 	private Double pricePerHour;
 	private Double pricePerDay;
 
-	private BrazilTaxService brazilTaxService;
+	private BrazilTaxService taxService;
 
-
-	public RentalService(Double pricePerHour, Double pricePerDay, BrazilTaxService brazilTaxService) {
+	public RentalService(Double pricePerHour, Double pricePerDay, BrazilTaxService taxService) {
 
 		this.pricePerHour = pricePerHour;
 		this.pricePerDay = pricePerDay;
-		this.brazilTaxService = brazilTaxService;
+		this.taxService = taxService;
 	}
 
 	public Double getPricePerHour() {
@@ -34,14 +34,29 @@ public class RentalService {
 	}
 
 	public BrazilTaxService getBrazilTaxService() {
-		return brazilTaxService;
+		return taxService;
 	}
 
 	public void setBrazilTaxService(BrazilTaxService brazilTaxService) {
-		this.brazilTaxService = brazilTaxService;
+		this.taxService = brazilTaxService;
 	}
 
 	public void processInvoice(CarRental carRental) {
-		
+		long t1 = carRental.getStart().getTime();
+		long t2 = carRental.getFinish().getTime();
+
+		double hours = (double) (t2 - t1) / 1000 / 60 / 60; // Achar a diferença em horas - (t2 - t1 (milissegundos)) //
+															// /1000 (acha segundos)// /60(horas)// /60(minutos)
+
+		double basicPayment;
+		if (hours <= 12.0) {
+			basicPayment = Math.ceil(hours) * pricePerHour;
+		} else {
+			basicPayment = Math.ceil(hours / 24) * pricePerDay;
+		}
+
+		double tax = taxService.tax(basicPayment);
+
+		carRental.setInvoice(new Invoice(basicPayment, tax));
 	}
 }
